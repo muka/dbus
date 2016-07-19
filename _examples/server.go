@@ -7,13 +7,11 @@ import (
 	"os"
 )
 
-const intro = `
-<node>
-	<interface name="com.github.guelfey.Demo">
-		<method name="Foo">
-			<arg direction="out" type="s"/>
-		</method>
-	</interface>` + introspect.IntrospectDataString + `</node> `
+const (
+	intfName = "com.github.guelfey.Demo"
+	name     = "com.github.guelfey.Demo"
+	path     = "/com/github/guelfey/Demo"
+)
 
 type foo string
 
@@ -36,10 +34,22 @@ func main() {
 		fmt.Fprintln(os.Stderr, "name already taken")
 		os.Exit(1)
 	}
+
 	f := foo("Bar!")
-	conn.Export(f, "/com/github/guelfey/Demo", "com.github.guelfey.Demo")
-	conn.Export(introspect.Introspectable(intro), "/com/github/guelfey/Demo",
+
+	conn.Export(f, path, intfName)
+	conn.Export(introspect.NewIntrospectable(&introspect.Node{
+		Name: path,
+		Interfaces: []introspect.Interface{
+			introspect.IntrospectData,
+			{
+				Name:    intfName,
+				Methods: introspect.Methods(f),
+			},
+		},
+	}), path,
 		"org.freedesktop.DBus.Introspectable")
-	fmt.Println("Listening on com.github.guelfey.Demo / /com/github/guelfey/Demo ...")
+
+	fmt.Printf("Listening on %s / %s ...", intfName, path)
 	select {}
 }

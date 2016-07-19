@@ -14,6 +14,41 @@ import (
 // export it as org.freedesktop.Introspectable on you object.
 type Introspectable string
 
+func addInstrospectableChildren(root *Node) {
+
+	if len(root.Children) > 0 || root.Name == "/" {
+		return
+	}
+
+	parts := strings.Split(root.Name, "/")
+	partialPath := ""
+	partsLen := len(parts)
+	root.Children = make([]Node, partsLen-1)
+	for i := 0; i < partsLen; i++ {
+
+		if i+1 == partsLen {
+			break
+		}
+
+		path := parts[i]
+
+		switch i {
+		case 0:
+			partialPath = "/"
+		case 1:
+			partialPath += path
+		default:
+			partialPath += "/" + path
+		}
+
+		root.Children[i] = Node{
+			Name: partialPath,
+		}
+
+	}
+
+}
+
 // NewIntrospectable returns an Introspectable that returns the introspection
 // data that corresponds to the given Node. If n.Interfaces doesn't contain the
 // data for org.freedesktop.DBus.Introspectable, it is added automatically.
@@ -28,6 +63,7 @@ func NewIntrospectable(n *Node) Introspectable {
 	if !found {
 		n.Interfaces = append(n.Interfaces, IntrospectData)
 	}
+	addInstrospectableChildren(n)
 	b, err := xml.Marshal(n)
 	if err != nil {
 		panic(err)
